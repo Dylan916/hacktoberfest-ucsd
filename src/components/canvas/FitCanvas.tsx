@@ -50,15 +50,15 @@ export function FitCanvas({
       />
 
       {/* View Switcher Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-[#1A1C22]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-[#E3E1D9] dark:border-[#1A1C22]">
         <div className="flex items-center space-x-2">
-          <div className="inline-flex p-1 rounded-lg bg-[#14151B] border border-[#1E2028]">
+          <div className="inline-flex p-1 rounded-lg bg-[#EAE8E2] dark:bg-[#14151B] border border-[#DDD9CE] dark:border-[#1E2028] shadow-xs">
             <button
               onClick={() => setViewMode('flatlay')}
               className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 viewMode === 'flatlay'
-                  ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-zinc-950 font-semibold shadow-xs dark:bg-zinc-100 dark:text-zinc-950'
+                  : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -68,8 +68,8 @@ export function FitCanvas({
               onClick={() => setViewMode('mannequin')}
               className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 viewMode === 'mannequin'
-                  ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-zinc-950 font-semibold shadow-xs dark:bg-zinc-100 dark:text-zinc-950'
+                  : 'text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
               <User className="w-3.5 h-3.5" />
@@ -78,9 +78,9 @@ export function FitCanvas({
           </div>
         </div>
 
-        <div className="text-xs text-zinc-400 font-mono">
+        <div className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
           <span>Wearing: </span>
-          <span className="text-zinc-200 font-semibold">{fitItems.length} pieces</span>
+          <span className="text-zinc-900 dark:text-zinc-200 font-semibold">{fitItems.length} pieces</span>
         </div>
       </div>
 

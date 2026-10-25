@@ -1,6 +1,25 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
 :root {
+  --background: #FAF9F6;
+  --foreground: #111215;
+  --panel: #FFFFFF;
+  --card: #F4F3EE;
+  --card-hover: #EBEAE3;
+  --border: #E3E1D9;
+  --border-strong: #CFCBC2;
+  --muted: #636670;
+  --subtle: #8F929D;
+  --accent: #111215;
+  --accent-gold: #9E7B36;
+}
+
+html.dark,
+body.dark,
+.dark,
+[data-theme="dark"] {
   --background: #0B0C0E;
   --foreground: #F4F5F7;
   --panel: #121316;
@@ -37,6 +56,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Tabular figures for prices, formality, counts */
@@ -50,12 +70,12 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0C0E;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: #22242B;
+  background: var(--border-strong);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #32353E;
+  background: var(--muted);
 }

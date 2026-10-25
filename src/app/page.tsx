@@ -13,6 +13,18 @@ import { WishlistView } from '@/components/wardrobe/WishlistView';
 import { GarmentDetailModal } from '@/components/wardrobe/GarmentDetailModal';
 
 export default function Home() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTheme = localStorage.getItem('auracloset-theme');
+        if (savedTheme === 'dark' || savedTheme === 'light') return savedTheme;
+      } catch {
+        // fallback to light
+      }
+    }
+    return 'light';
+  });
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('canvas');
   const [items, setItems] = useState<GarmentItem[]>([]);
   const [activeOutfit, setActiveOutfit] = useState<StylistResponse | null>(MOCK_STYLIST_RESPONSES.rain);
@@ -20,6 +32,44 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isStylistLoading, setIsStylistLoading] = useState(false);
   const [inspectingItem, setInspectingItem] = useState<GarmentItem | null>(null);
+
+  // Synchronize document root and body classes whenever theme state changes
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      document.body?.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      document.body?.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
+  }, [theme]);
+
+  const handleSetTheme = (newTheme: 'light' | 'dark') => {
+    setTheme(newTheme);
+    try {
+      localStorage.setItem('auracloset-theme', newTheme);
+    } catch (e) {
+      console.warn('Failed to save theme:', e);
+    }
+
+    const root = document.documentElement;
+    if (newTheme === 'dark') {
+      root.classList.add('dark');
+      document.body?.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      document.body?.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
+  };
+
+  const toggleTheme = () => {
+    handleSetTheme(theme === 'light' ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -119,10 +169,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0C0E] text-[#F4F5F7] flex flex-col font-sans selection:bg-zinc-800 selection:text-zinc-100">
+    <div className={`${theme === 'dark' ? 'dark' : ''} min-h-screen bg-[#FAF9F6] text-[#111215] dark:bg-[#0B0C0E] dark:text-[#F4F5F7] flex flex-col font-sans selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-200`}>
       <Header
         ownedCount={ownedItems.length}
         wishlistCount={wishlistItems.length}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onSetTheme={handleSetTheme}
         onAddClick={() => alert('Camera Ingestion (Track 2) will open client-side background removal')}
       />
 
@@ -161,14 +214,14 @@ export default function Home() {
               <div className="py-2">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h1 className="text-xl font-semibold tracking-tight text-zinc-100">
+                    <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                       My Wardrobe Inventory
                     </h1>
-                    <p className="text-xs text-zinc-500 mt-0.5">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                       Client-side isolated cutouts stored locally in Dexie.js
                     </p>
                   </div>
-                  <span className="text-xs font-mono text-zinc-400 bg-[#16171B] px-2.5 py-1 rounded border border-[#22242B] tabular-nums">
+                  <span className="text-xs font-mono text-zinc-700 dark:text-zinc-400 bg-[#E8E6DF] dark:bg-[#16171B] px-2.5 py-1 rounded border border-[#D8D5CC] dark:border-[#22242B] tabular-nums">
                     {ownedItems.length} pieces
                   </span>
                 </div>

@@ -18,6 +18,7 @@ export class AuraClosetDatabase extends Dexie {
 }
 
 export const db = new AuraClosetDatabase();
+export const localDb = db;
 
 /**
  * Initializes the local database and seeds it with mock wardrobe data if empty.
@@ -35,4 +36,21 @@ export async function initializeLocalDb(): Promise<GarmentItem[]> {
     console.error('Dexie initialization error, falling back to mock wardrobe in memory:', error);
     return MOCK_WARDROBE;
   }
+}
+
+export async function getWardrobeItems(): Promise<GarmentItem[]> {
+  return db.wardrobeItems.toArray();
+}
+
+export async function saveOutfit(
+  outfit: Omit<SavedOutfit, 'id' | 'createdAt'> & { id?: string },
+): Promise<string> {
+  const outfitId = outfit.id || `outfit_${Date.now()}`;
+  const record: SavedOutfit = {
+    ...outfit,
+    id: outfitId,
+    createdAt: new Date().toISOString(),
+  };
+  await db.savedOutfits.put(record);
+  return outfitId;
 }

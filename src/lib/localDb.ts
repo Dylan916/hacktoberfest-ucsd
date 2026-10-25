@@ -28,7 +28,7 @@ export async function initializeLocalDb(): Promise<GarmentItem[]> {
     const count = await db.wardrobeItems.count();
     if (count === 0) {
       console.log('Seeding AuraCloset local Dexie database with initial editorial wardrobe...');
-      await db.wardrobeItems.bulkAdd(MOCK_WARDROBE);
+      await db.wardrobeItems.bulkPut(MOCK_WARDROBE);
     }
     return await db.wardrobeItems.toArray();
   } catch (error) {

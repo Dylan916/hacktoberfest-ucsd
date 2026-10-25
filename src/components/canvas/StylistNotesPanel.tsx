@@ -1,0 +1,121 @@
+'use client';
+
+import React from 'react';
+import { StylistResponse } from '@/types/closet';
+import { Sparkles, ShoppingBag, Watch, ArrowRight, Bookmark, Check } from 'lucide-react';
+
+interface StylistNotesPanelProps {
+  stylistResponse: StylistResponse | null;
+  onViewWishlist?: () => void;
+  onSaveOutfit?: () => void;
+  isSaved?: boolean;
+}
+
+export function StylistNotesPanel({
+  stylistResponse,
+  onViewWishlist,
+  onSaveOutfit,
+  isSaved = false,
+}: StylistNotesPanelProps) {
+  if (!stylistResponse) return null;
+
+  return (
+    <div className="rounded-xl border border-[#1E2025] bg-[#111216] p-5 sm:p-6 space-y-5">
+      {/* Title & Save Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#1C1D24] pb-4">
+        <div>
+          <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-wider text-amber-400 mb-1">
+            <Sparkles className="w-3 h-3" />
+            <span>Gemma 4 Stylist Consultation</span>
+          </div>
+          <h2 className="text-lg font-semibold text-zinc-100">
+            {stylistResponse.outfitTitle}
+          </h2>
+        </div>
+
+        {onSaveOutfit && (
+          <button
+            onClick={onSaveOutfit}
+            className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer self-start sm:self-auto ${
+              isSaved
+                ? 'bg-[#1C1E26] text-emerald-400 border border-emerald-900/50'
+                : 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700'
+            }`}
+          >
+            {isSaved ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Saved to Outfits</span>
+              </>
+            ) : (
+              <>
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>Save Outfit</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Proportions & Styling Notes */}
+      <div>
+        <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+          Silhouette & Color Rationale
+        </h3>
+        <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans">
+          {stylistResponse.stylistNotes}
+        </p>
+      </div>
+
+      {/* Accessory Advice Callout */}
+      {stylistResponse.accessoryAdvice && (
+        <div className="rounded-lg bg-[#15161C] border border-[#22242E] p-3.5 flex items-start space-x-3">
+          <Watch className="w-4 h-4 text-amber-400/90 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-[11px] font-medium text-amber-300 uppercase font-mono tracking-wider mb-0.5">
+              Accessory & Jewelry Pairing
+            </h4>
+            <p className="text-xs text-zinc-300 leading-normal">
+              {stylistResponse.accessoryAdvice}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Missing Pieces Online Gap-Filling Alert */}
+      {stylistResponse.missingPieces && stylistResponse.missingPieces.length > 0 && (
+        <div className="rounded-lg bg-[#181513] border border-[#33221B] p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-amber-400 text-xs font-medium">
+              <ShoppingBag className="w-4 h-4" />
+              <span>Wardrobe Gap Identified ({stylistResponse.missingPieces.length})</span>
+            </div>
+            {onViewWishlist && (
+              <button
+                onClick={onViewWishlist}
+                className="text-[11px] text-amber-300 hover:text-amber-200 inline-flex items-center space-x-1 font-medium cursor-pointer"
+              >
+                <span>View in Wishlist</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-1.5 pt-1">
+            {stylistResponse.missingPieces.map((piece, idx) => (
+              <div key={idx} className="text-xs text-zinc-300 flex items-start space-x-2">
+                <span className="text-amber-500 font-mono text-[10px] uppercase shrink-0 mt-0.5">
+                  [{piece.category}]
+                </span>
+                <div>
+                  <span className="font-medium text-zinc-200">{piece.description}</span> —{' '}
+                  <span className="text-zinc-400">{piece.reasonNeeded}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

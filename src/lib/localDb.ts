@@ -1,39 +1,56 @@
-import Dexie, { type Table } from "dexie";
-import type { GarmentItem } from "@/types/garment";
+// src/lib/localDb.ts
+// Offline-first Dexie.js IndexedDB storage for wardrobe items and saved outfits
+import Dexie, { type Table } from 'dexie';
+import { GarmentItem, SavedOutfit } from '@/types/closet';
+import { MOCK_WARDROBE } from '@/mocks/mockWardrobe';
 
-export interface SavedOutfit {
-  id?: number;
-  name: string;
-  itemIds: string[];
-  notes?: string;
-  createdAt: string;
-  prompt?: string;
-}
-
-class WardrobeDatabase extends Dexie {
+export class AuraClosetDatabase extends Dexie {
   wardrobeItems!: Table<GarmentItem, string>;
-  savedOutfits!: Table<SavedOutfit, number>;
+  savedOutfits!: Table<SavedOutfit, string>;
 
   constructor() {
-    super("wardrobe-stylist");
+    super('AuraClosetDB');
     this.version(1).stores({
-      wardrobeItems: "id, category, color, season, *tags",
-      savedOutfits: "++id, name, createdAt",
+      wardrobeItems: 'id, userId, category, isOwned, createdAt, *metadata.vibeTags, *metadata.seasonality',
+      savedOutfits: 'id, userId, createdAt',
     });
   }
 }
 
-export const localDb = new WardrobeDatabase();
+export const db = new AuraClosetDatabase();
+export const localDb = db;
+
+/**
+ * Initializes the local database and seeds it with mock wardrobe data if empty.
+ * Ensures the app works 100% offline with zero latency on first launch.
+ */
+export async function initializeLocalDb(): Promise<GarmentItem[]> {
+  try {
+    const count = await db.wardrobeItems.count();
+    if (count === 0) {
+      console.log('Seeding AuraCloset local Dexie database with initial editorial wardrobe...');
+      await db.wardrobeItems.bulkPut(MOCK_WARDROBE);
+    }
+    return await db.wardrobeItems.toArray();
+  } catch (error) {
+    console.error('Dexie initialization error, falling back to mock wardrobe in memory:', error);
+    return MOCK_WARDROBE;
+  }
+}
 
 export async function getWardrobeItems(): Promise<GarmentItem[]> {
-  return localDb.wardrobeItems.toArray();
+  return db.wardrobeItems.toArray();
 }
 
 export async function saveOutfit(
-  outfit: Omit<SavedOutfit, "id" | "createdAt">,
-): Promise<number> {
-  return localDb.savedOutfits.add({
+  outfit: Omit<SavedOutfit, 'id' | 'createdAt'> & { id?: string },
+): Promise<string> {
+  const outfitId = outfit.id || `outfit_${Date.now()}`;
+  const record: SavedOutfit = {
     ...outfit,
+    id: outfitId,
     createdAt: new Date().toISOString(),
-  });
+  };
+  await db.savedOutfits.put(record);
+  return outfitId;
 }

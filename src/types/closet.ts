@@ -45,6 +45,8 @@ export interface StylistResponse {
   closetAudit?: ClosetAuditEntry[];
   wishlistSuggestions?: string[];
   provider?: 'gemma-api' | 'local-gemma' | 'offline-fallback';
+  mannequinImageUrl?: string;
+  mannequinVisionCritique?: string;
 }
 
 export interface ClosetAuditEntry {
@@ -58,6 +60,9 @@ export interface WishlistSuggestion {
   name: string;
   reason: string;
   prompt: string;
+  priceEstimate?: string;
+  shopUrl?: string;
+  retailer?: string;
   createdAt: string;
 }
 
@@ -70,5 +75,6 @@ export interface SavedOutfit {
   stylistNotes: string;
   accessoryAdvice?: string;
   mannequinImageUrl?: string;
+  mannequinVisionCritique?: string;
   createdAt: string;
 }

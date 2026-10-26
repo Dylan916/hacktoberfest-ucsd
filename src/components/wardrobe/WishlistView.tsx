@@ -60,23 +60,52 @@ export function WishlistView({
             <span className="text-xs text-zinc-500">Saved from your Vibe Coach sessions</span>
           </div>
           <ul className="divide-y divide-[#E3E1D9] dark:divide-[#1E2025]">
-            {suggestions.map((suggestion) => (
-              <li key={suggestion.id} className="flex items-center justify-between gap-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{suggestion.name}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{suggestion.reason}</p>
-                </div>
-                {onRemoveSuggestion && (
-                  <button
-                    onClick={() => onRemoveSuggestion(suggestion.id)}
-                    className="shrink-0 p-2 text-zinc-500 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
-                    aria-label={`Remove ${suggestion.name} from wishlist`}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </li>
-            ))}
+            {suggestions.map((suggestion) => {
+              const shopUrl =
+                suggestion.shopUrl ||
+                `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(suggestion.name)}`;
+              return (
+                <li
+                  key={suggestion.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3 px-3 rounded-lg hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{suggestion.name}</p>
+                      {suggestion.priceEstimate && (
+                        <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 tabular-nums">
+                          {suggestion.priceEstimate}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-1">{suggestion.reason}</p>
+                  </div>
+
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <a
+                      href={shopUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-2xs"
+                    >
+                      <span>Shop Online</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+
+                    {onRemoveSuggestion && (
+                      <button
+                        onClick={() => onRemoveSuggestion(suggestion.id)}
+                        className="p-1.5 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                        title="Remove from wishlist"
+                        aria-label={`Remove ${suggestion.name} from wishlist`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

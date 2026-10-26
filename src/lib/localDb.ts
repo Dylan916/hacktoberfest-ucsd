@@ -32,11 +32,24 @@ export const localDb = db;
  */
 export async function initializeLocalDb(): Promise<GarmentItem[]> {
   try {
-    const count = await db.wardrobeItems.count();
-    if (count === 0) {
-      console.log('Seeding AuraCloset local Dexie database with initial editorial wardrobe...');
-      await db.wardrobeItems.bulkPut(MOCK_WARDROBE);
-    }
+    await db.transaction('rw', db.wardrobeItems, async () => {
+      const count = await db.wardrobeItems.count();
+      if (count === 0) {
+        await db.wardrobeItems.bulkPut(MOCK_WARDROBE);
+        return;
+      }
+
+      // Earlier releases stored the default wardrobe in IndexedDB, so simply
+      // changing the seed would leave existing browsers showing old photos.
+      // Replace only untouched remote demo records and preserve uploaded items.
+      const previousDefaults = await db.wardrobeItems
+        .where('userId').equals('user_default').toArray();
+      const newDefaults = new Map(MOCK_WARDROBE.map((item) => [item.id, item]));
+      const replacements = previousDefaults
+        .filter((item) => item.originalImageUrl.startsWith('https://images.unsplash.com/') && newDefaults.has(item.id))
+        .map((item) => newDefaults.get(item.id)!);
+      if (replacements.length) await db.wardrobeItems.bulkPut(replacements);
+    });
     return await db.wardrobeItems.toArray();
   } catch (error) {
     console.error('Dexie initialization error, falling back to mock wardrobe in memory:', error);

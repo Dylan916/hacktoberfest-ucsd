@@ -272,7 +272,7 @@ export default function Home() {
                       My Wardrobe Inventory
                     </h1>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      Client-side isolated cutouts stored locally in Dexie.js
+                      Your wardrobe, stored on this device
                     </p>
                   </div>
                   <span className="text-xs font-mono text-zinc-700 dark:text-zinc-400 bg-[#E8E6DF] dark:bg-[#16171B] px-2.5 py-1 rounded border border-[#D8D5CC] dark:border-[#22242B] tabular-nums">

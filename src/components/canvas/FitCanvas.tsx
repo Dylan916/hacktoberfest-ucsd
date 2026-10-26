@@ -75,7 +75,7 @@ export function FitCanvas({
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>3D Mannequin View</span>
+              <span>Mannequin Drape</span>
             </button>
           </div>
         </div>
@@ -97,6 +97,8 @@ export function FitCanvas({
         <MannequinView
           items={fitItems}
           outfitTitle={activeOutfit?.outfitTitle}
+          onItemClick={onItemClick}
+          onRemoveItem={onRemoveItemFromFit}
         />
       )}
 

@@ -110,12 +110,16 @@ export default function Home() {
       if (response.mode === 'vibe_coach') {
         setVibeCoachResponse(response);
       }
-      const wishlistNames = [
-        ...(response.wishlistSuggestions ?? []),
-        ...response.missingPieces.map((piece) => piece.description),
+      const wishlistPayload = [
+        ...(response.wishlistSuggestions?.map((name) => ({ name })) ?? []),
+        ...response.missingPieces.map((piece) => ({
+          name: piece.description,
+          reason: piece.reasonNeeded,
+          searchQuery: piece.searchQuery,
+        })),
       ];
-      if (wishlistNames.length) {
-        const saved = await saveWishlistSuggestions(wishlistNames, prompt);
+      if (wishlistPayload.length) {
+        const saved = await saveWishlistSuggestions(wishlistPayload, prompt);
         setWishlistSuggestions(saved);
       }
       setActiveTab(response.mode === 'vibe_coach' ? 'vibecoach' : 'canvas');

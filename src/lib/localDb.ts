@@ -65,15 +65,13 @@ export async function getWishlistSuggestions(): Promise<WishlistSuggestion[]> {
   return db.wishlistSuggestions.orderBy('createdAt').reverse().toArray();
 }
 
-export async function saveWishlistSuggestions(names: string[], prompt: string): Promise<WishlistSuggestion[]> {
-  const createdAt = new Date().toISOString();
-  const records = names.map((name) => ({
-    id: `suggestion_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60)}`,
-    name,
-    reason: `Suggested by your stylist for: ${prompt}`,
-    prompt,
-    createdAt,
-  }));
+import { formatGapFillSuggestions } from './gapFillService';
+
+export async function saveWishlistSuggestions(
+  items: Array<{ name: string; reason?: string; searchQuery?: string } | string>,
+  prompt: string
+): Promise<WishlistSuggestion[]> {
+  const records = formatGapFillSuggestions(items, prompt);
   await db.wishlistSuggestions.bulkPut(records);
   return getWishlistSuggestions();
 }

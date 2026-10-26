@@ -1,18 +1,24 @@
 // src/lib/localDb.ts
 // Offline-first Dexie.js IndexedDB storage for wardrobe items and saved outfits
 import Dexie, { type Table } from 'dexie';
-import { GarmentItem, SavedOutfit } from '@/types/closet';
+import type { GarmentItem, SavedOutfit, WishlistSuggestion } from '@/types/closet';
 import { MOCK_WARDROBE } from '@/mocks/mockWardrobe';
 
 export class AuraClosetDatabase extends Dexie {
   wardrobeItems!: Table<GarmentItem, string>;
   savedOutfits!: Table<SavedOutfit, string>;
+  wishlistSuggestions!: Table<WishlistSuggestion, string>;
 
   constructor() {
     super('AuraClosetDB');
     this.version(1).stores({
       wardrobeItems: 'id, userId, category, isOwned, createdAt, *metadata.vibeTags, *metadata.seasonality',
       savedOutfits: 'id, userId, createdAt',
+    });
+    this.version(2).stores({
+      wardrobeItems: 'id, userId, category, isOwned, createdAt, *metadata.vibeTags, *metadata.seasonality',
+      savedOutfits: 'id, userId, createdAt',
+      wishlistSuggestions: 'id, createdAt',
     });
   }
 }
@@ -53,4 +59,25 @@ export async function saveOutfit(
   };
   await db.savedOutfits.put(record);
   return outfitId;
+}
+
+export async function getWishlistSuggestions(): Promise<WishlistSuggestion[]> {
+  return db.wishlistSuggestions.orderBy('createdAt').reverse().toArray();
+}
+
+export async function saveWishlistSuggestions(names: string[], prompt: string): Promise<WishlistSuggestion[]> {
+  const createdAt = new Date().toISOString();
+  const records = names.map((name) => ({
+    id: `suggestion_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60)}`,
+    name,
+    reason: `Suggested by your stylist for: ${prompt}`,
+    prompt,
+    createdAt,
+  }));
+  await db.wishlistSuggestions.bulkPut(records);
+  return getWishlistSuggestions();
+}
+
+export async function removeWishlistSuggestion(id: string): Promise<void> {
+  await db.wishlistSuggestions.delete(id);
 }

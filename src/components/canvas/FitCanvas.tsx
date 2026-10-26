@@ -17,6 +17,7 @@ interface FitCanvasProps {
   onRemoveItemFromFit?: (itemId: string) => void;
   onViewWishlist?: () => void;
   onItemClick?: (item: GarmentItem) => void;
+  onSaveOutfit?: () => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -29,6 +30,7 @@ export function FitCanvas({
   onRemoveItemFromFit,
   onViewWishlist,
   onItemClick,
+  onSaveOutfit,
   isLoading = false,
 }: FitCanvasProps) {
   const [viewMode, setViewMode] = useState<'flatlay' | 'mannequin'>('flatlay');
@@ -102,7 +104,10 @@ export function FitCanvas({
       <StylistNotesPanel
         stylistResponse={activeOutfit}
         onViewWishlist={onViewWishlist}
-        onSaveOutfit={() => setIsSaved(true)}
+        onSaveOutfit={async () => {
+          await onSaveOutfit?.();
+          setIsSaved(true);
+        }}
         isSaved={isSaved}
       />
     </div>

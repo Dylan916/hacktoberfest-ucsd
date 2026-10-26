@@ -2,26 +2,31 @@
 
 import React from 'react';
 import { GarmentItem } from '@/types/closet';
+import type { WishlistSuggestion } from '@/types/closet';
 import { BookmarkCheck, ExternalLink, Check, Trash2, Globe } from 'lucide-react';
 
 interface WishlistViewProps {
   wishlistItems: GarmentItem[];
+  suggestions?: WishlistSuggestion[];
   onMarkAsOwned?: (itemId: string) => void;
   onRemoveFromWishlist?: (itemId: string) => void;
+  onRemoveSuggestion?: (id: string) => void;
 }
 
 export function WishlistView({
   wishlistItems,
+  suggestions = [],
   onMarkAsOwned,
   onRemoveFromWishlist,
+  onRemoveSuggestion,
 }: WishlistViewProps) {
-  if (wishlistItems.length === 0) {
+  if (wishlistItems.length === 0 && suggestions.length === 0) {
     return (
       <div className="rounded-xl border border-[#E3E1D9] dark:border-[#1E2025] bg-white dark:bg-[#101115] p-12 text-center my-6 shadow-xs transition-colors">
         <BookmarkCheck className="w-8 h-8 text-zinc-400 dark:text-zinc-600 mx-auto mb-3" />
         <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-300">Your Wishlist is Empty</h3>
         <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1 max-w-sm mx-auto">
-          When you prompt the Fit Studio with &quot;Complete missing pieces online&quot; enabled, Gemini Search Grounding will curate real purchasable pieces to fill wardrobe gaps here.
+          Missing outfit pieces and Vibe Coach staples are saved here. Online product discovery can be connected separately.
         </p>
       </div>
     );
@@ -33,22 +38,50 @@ export function WishlistView({
         <div>
           <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-1">
             <Globe className="w-3.5 h-3.5" />
-            <span>Gemini Google Search Grounded Buys</span>
+            <span>Saved by your stylist</span>
           </div>
           <h1 className="text-xl font-semibold text-zinc-950 dark:text-zinc-100">
-            To-Buy Wardrobe Wishlist
+            Wardrobe Wishlist
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Real purchasable garments curated to complete your outfit silhouettes.
+            Owned-closet gaps and Vibe Coach staples you may want to add.
           </p>
         </div>
 
         <span className="text-xs font-mono text-zinc-700 dark:text-zinc-400 bg-[#EAE8E2] dark:bg-[#16171B] px-3 py-1 rounded border border-[#DDD9CE] dark:border-[#22242B] self-start sm:self-auto tabular-nums">
-          {wishlistItems.length} potential additions
+          {wishlistItems.length + suggestions.length} potential additions
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {suggestions.length > 0 && (
+        <section className="space-y-3" aria-labelledby="stylist-wishlist-heading">
+          <div className="flex items-baseline justify-between border-b border-[#E3E1D9] dark:border-[#1E2025] pb-2">
+            <h2 id="stylist-wishlist-heading" className="text-sm font-semibold text-zinc-900 dark:text-zinc-200">Stylist staples</h2>
+            <span className="text-xs text-zinc-500">Saved from your Vibe Coach sessions</span>
+          </div>
+          <ul className="divide-y divide-[#E3E1D9] dark:divide-[#1E2025]">
+            {suggestions.map((suggestion) => (
+              <li key={suggestion.id} className="flex items-center justify-between gap-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{suggestion.name}</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{suggestion.reason}</p>
+                </div>
+                {onRemoveSuggestion && (
+                  <button
+                    onClick={() => onRemoveSuggestion(suggestion.id)}
+                    className="shrink-0 p-2 text-zinc-500 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                    aria-label={`Remove ${suggestion.name} from wishlist`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {wishlistItems.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {wishlistItems.map((item) => (
           <div
             key={item.id}
@@ -132,7 +165,7 @@ export function WishlistView({
             </div>
           </div>
         ))}
-      </div>
+      </div>}
     </div>
   );
 }

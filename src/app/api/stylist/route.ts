@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
-import type { GarmentItem } from "@/types/garment";
+import type { GarmentItem } from "@/types/closet";
 import { buildStylistInput, parseStylistResponse, STYLIST_SYSTEM_PROMPT } from "@/lib/stylistPrompt";
 
 interface StylistRequest {

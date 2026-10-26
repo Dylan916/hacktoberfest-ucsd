@@ -56,10 +56,10 @@ export function PromptBar({
                 ? 'bg-zinc-100 text-zinc-900 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-600'
                 : 'text-zinc-500 hover:text-zinc-800 hover:bg-[#F2F0E8] dark:hover:text-zinc-300 dark:hover:bg-[#1A1C22]'
             }`}
-            title="Search online retailers with Gemini Google Grounding if closet lacks items"
+            title="Use online search context while Gemma styles your closet"
           >
             <Globe className={`w-3.5 h-3.5 ${allowOnlineSearch ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`} />
-            <span className="text-[11px] font-medium whitespace-nowrap">Find missing online</span>
+            <span className="text-[11px] font-medium whitespace-nowrap">Online context</span>
           </button>
 
           {/* Submit Button */}
@@ -111,7 +111,7 @@ export function PromptBar({
             }`}
           >
             <Globe className="w-3 h-3 text-amber-500 dark:text-amber-400" />
-            <span className="text-[10px]">Complete online: {allowOnlineSearch ? 'ON' : 'OFF'}</span>
+            <span className="text-[10px]">Online context: {allowOnlineSearch ? 'ON' : 'OFF'}</span>
           </button>
         </div>
       </div>

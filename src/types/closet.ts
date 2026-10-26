@@ -42,6 +42,23 @@ export interface StylistResponse {
   selectedItemIds: string[];  // IDs of owned items from the user's closet
   accessoryAdvice: string;    // Specific watch/chain/ring pairing advice
   missingPieces: MissingPieceSpec[]; // Used by Track 4 if "Find online" toggle is ON
+  closetAudit?: ClosetAuditEntry[];
+  wishlistSuggestions?: string[];
+  provider?: 'gemma-api' | 'local-gemma' | 'offline-fallback';
+}
+
+export interface ClosetAuditEntry {
+  itemId: string;
+  whyItWorks: string;
+  stylingTip: string;
+}
+
+export interface WishlistSuggestion {
+  id: string;
+  name: string;
+  reason: string;
+  prompt: string;
+  createdAt: string;
 }
 
 export interface SavedOutfit {

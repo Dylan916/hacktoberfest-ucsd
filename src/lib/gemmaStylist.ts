@@ -1,4 +1,4 @@
-import type { GarmentItem, StylistResponse } from "@/types/garment";
+import type { GarmentItem, StylistResponse } from "@/types/closet";
 import { buildStylistInput, offlineStylistResponse, parseStylistResponse, STYLIST_SYSTEM_PROMPT } from "@/lib/stylistPrompt";
 
 const LOCAL_GEMMA_URL = process.env.NEXT_PUBLIC_LOCAL_GEMMA_URL ?? "http://localhost:11434/api/chat";

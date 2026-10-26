@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { GarmentItem } from '@/types/closet';
+import type { GarmentItem, StylistResponse } from '@/types/closet';
 import { Compass, Sliders, Palette, Lightbulb, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface VibeCoachViewProps {
   items: GarmentItem[];
+  stylistResponse?: StylistResponse | null;
   onApplyPrompt?: (prompt: string) => void;
 }
 
-export function VibeCoachView({ items, onApplyPrompt }: VibeCoachViewProps) {
+export function VibeCoachView({ items, stylistResponse, onApplyPrompt }: VibeCoachViewProps) {
   // Compute aesthetic vibe distribution
   const vibeAnalysis = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -45,26 +46,7 @@ export function VibeCoachView({ items, onApplyPrompt }: VibeCoachViewProps) {
     return (sum / items.length).toFixed(1);
   }, [items]);
 
-  const coachingFormulas = [
-    {
-      title: 'High-Low Silhouette Tension',
-      formula: 'Voluminous Layering + Cropped Base',
-      rule: 'Pair your double-knee relaxed trousers with the boxy tee, leaving the heavy Detroit canvas jacket unzipped for effortless architectural drape.',
-      triggerPrompt: 'Style an effortless high-low workwear outfit',
-    },
-    {
-      title: 'Monochrome Jewelry Stacking',
-      formula: 'Cold Silver Over Heavy 500gsm Cotton',
-      rule: 'The 8mm Cuban link chain creates a sharp focal point over dark washed charcoal fleece. Complement it with the onyx signet ring on the opposite hand.',
-      triggerPrompt: 'Build me an outfit with silver chain and jewelry highlights',
-    },
-    {
-      title: 'Quiet Nonchalance Audit',
-      formula: 'Tailored Wool + Tech Footwear',
-      rule: 'The biggest style unlock is juxtaposing formal pleated wool trousers with Salomon tech runners. It communicates you care about craft without looking try-hard.',
-      triggerPrompt: 'I want to dress nonchalantly with tailored trousers',
-    },
-  ];
+  const closetNames = useMemo(() => new Map(items.map((item) => [item.id, item.metadata.name])), [items]);
 
   return (
     <div className="space-y-8 py-2">
@@ -72,13 +54,15 @@ export function VibeCoachView({ items, onApplyPrompt }: VibeCoachViewProps) {
       <div className="rounded-xl border border-[#E3E1D9] dark:border-[#1E2025] bg-gradient-to-r from-white to-[#F8F7F2] dark:from-[#121317] dark:to-[#0D0E12] p-6 shadow-xs transition-colors">
         <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">
           <Compass className="w-4 h-4" />
-          <span>Gemma 4 Multimodal Wardrobe Diagnostic</span>
+          <span>{stylistResponse?.provider ? 'Gemma 4 Stylist Consultation' : 'Closet Metadata'}</span>
         </div>
         <h1 className="text-xl font-semibold text-zinc-950 dark:text-zinc-100">
           Closet DNA & Aesthetic Audit
         </h1>
         <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-2xl leading-relaxed">
-          Gemma analyzes the silhouette cuts, fabric weights, color hex spectrums, and formality scores of your {items.length} owned garments to reveal styling blind spots.
+          {stylistResponse?.mode === 'vibe_coach'
+            ? stylistResponse.stylistNotes
+            : `Review the recorded vibe tags, color palette, and formality metadata across your ${items.length} owned garments.`}
         </p>
       </div>
 
@@ -117,7 +101,7 @@ export function VibeCoachView({ items, onApplyPrompt }: VibeCoachViewProps) {
             <span>Extracted Color Palette</span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
-            Predominantly dark earth tones, charcoal neutrals, and brushed silver metallics.
+            {colorPalette.length} distinct primary colors recorded across your closet.
           </p>
           <div className="grid grid-cols-5 gap-2">
             {colorPalette.map((hex) => (
@@ -145,56 +129,55 @@ export function VibeCoachView({ items, onApplyPrompt }: VibeCoachViewProps) {
               <span className="text-xs font-normal text-zinc-500">/ 10</span>
             </div>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
-              Your wardrobe is centered around <strong className="text-zinc-900 dark:text-zinc-200">Elevated Casual / Streetwear Luxury</strong>. You have strong casual staples and high-end formal accents.
+              {items.length ? `Average formality across ${items.length} owned pieces.` : 'Add garments to see your closet formality.'}
             </p>
           </div>
 
           <div className="pt-4 border-t border-[#E3E1D9] dark:border-[#1C1E24] text-[11px] text-amber-700 dark:text-amber-400/90 font-mono">
-            ★ Recommendation: Add one relaxed knit polo to bridge the 5–7 formality gap.
+            {stylistResponse?.provider === 'offline-fallback' ? 'Offline closet-based coaching' : 'Computed from your saved garment metadata'}
           </div>
         </div>
       </div>
 
-      {/* Styling Formulas Section */}
+      {/* Item-by-item stylist audit and wishlist staples */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
           <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          <span>Curated Styling Formulas from Gemma Vibe Coach</span>
+          <span>Closet audit & next staples</span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {coachingFormulas.map((formula, idx) => (
-            <div
-              key={idx}
-              className="rounded-lg border border-[#E3E1D9] dark:border-[#1E2025] bg-white dark:bg-[#121316] p-5 flex flex-col justify-between space-y-3 hover:border-zinc-500 dark:hover:border-zinc-700 transition-colors shadow-xs"
-            >
-              <div>
-                <span className="text-[10px] font-mono uppercase text-amber-700 dark:text-amber-400/80 tracking-wider">
-                  Formula 0{idx + 1}
-                </span>
-                <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-100 mt-0.5">
-                  {formula.title}
-                </h3>
-                <div className="text-[11px] font-mono text-zinc-700 dark:text-zinc-400 bg-[#F4F3EE] dark:bg-[#17181F] px-2 py-1 rounded my-2 border border-[#E3E1D9] dark:border-[#22242D]">
-                  {formula.formula}
-                </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-sans">
-                  {formula.rule}
-                </p>
-              </div>
-
-              {onApplyPrompt && (
-                <button
-                  onClick={() => onApplyPrompt(formula.triggerPrompt)}
-                  className="inline-flex items-center space-x-1.5 text-xs text-zinc-900 hover:text-black dark:text-zinc-200 dark:hover:text-white pt-2 font-medium cursor-pointer"
-                >
-                  <span>Build this look in Studio</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
+        {stylistResponse?.mode === 'vibe_coach' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+            <div className="rounded-lg border border-[#E3E1D9] dark:border-[#1E2025] bg-white dark:bg-[#121316] divide-y divide-[#E3E1D9] dark:divide-[#1E2025]">
+              {stylistResponse.closetAudit?.map((entry) => (
+                <article key={entry.itemId} className="p-4">
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{closetNames.get(entry.itemId) ?? 'Closet item'}</h3>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">{entry.whyItWorks}</p>
+                  <p className="text-xs text-zinc-800 dark:text-zinc-300 mt-1">Styling: {entry.stylingTip}</p>
+                </article>
+              ))}
             </div>
-          ))}
-        </div>
+            <div className="rounded-lg border border-[#E3E1D9] dark:border-[#1E2025] bg-white dark:bg-[#121316] p-4">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Three staples to consider</h3>
+              <ol className="mt-3 list-decimal list-inside space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+                {stylistResponse.wishlistSuggestions?.map((suggestion) => <li key={suggestion}>{suggestion}</li>)}
+              </ol>
+              <p className="text-xs text-zinc-500 mt-3">Saved to your Wishlist.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-[#D8D5CC] dark:border-[#292B32] p-5 text-sm text-zinc-600 dark:text-zinc-400">
+            Run a Vibe Coach prompt to get an item-by-item audit of your closet and three wishlist staples.
+          </div>
+        )}
+        {onApplyPrompt && (
+          <button
+            onClick={() => onApplyPrompt('I want to dress more nonchalantly')}
+            className="inline-flex items-center space-x-1.5 text-xs text-zinc-900 hover:text-black dark:text-zinc-200 dark:hover:text-white pt-2 font-medium cursor-pointer"
+          >
+            <span>{stylistResponse?.mode === 'vibe_coach' ? 'Refresh closet audit' : 'Audit my closet'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );

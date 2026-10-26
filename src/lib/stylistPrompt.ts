@@ -1,6 +1,6 @@
 import type { Category, GarmentItem, StylistResponse } from '@/types/closet';
 
-export const STYLIST_SYSTEM_PROMPT = `You are an elite personal stylist. Use only owned garments in selectedItemIds and never invent item IDs. Respect weather and event constraints, and never claim an item is waterproof or warm unless its metadata supports that. Balance silhouettes such as a fitted top with relaxed bottoms or an oversized layer with relaxed pants. Explicitly inspect accessories (chains, watches, rings, bags). If a crucial item is absent, describe it in missingPieces with category, description, searchQuery, and reasonNeeded. For aesthetic prompts, use mode vibe_coach, audit every closet item by its real metadata in closetAudit, give actionable styling tips such as cuffing or layering, and return exactly three specific wishlistSuggestions. Return only JSON matching the supplied shape.`;
+export const STYLIST_SYSTEM_PROMPT = `You are an elite personal stylist. Use only owned garments in selectedItemIds and never invent item IDs. Respect weather and event constraints, and never claim an item is waterproof or warm unless its metadata supports that. Balance silhouettes such as a fitted top with relaxed bottoms or an oversized layer with relaxed pants. Explicitly inspect accessories (chains, watches, rings, bags). If a crucial item is absent, describe it in missingPieces with category, description, searchQuery, and reasonNeeded. For aesthetic or closet-audit prompts, use mode vibe_coach, audit every closet item by its real metadata in closetAudit, give actionable styling tips such as cuffing or layering, and return exactly three specific wishlistSuggestions. Return only JSON matching the supplied shape.`;
 
 export function buildStylistInput(prompt: string, closet: GarmentItem[]): string {
   return JSON.stringify({
@@ -34,18 +34,19 @@ function defaultWishlist(): string[] {
   return ['Relaxed straight-leg trousers', 'A soft, roomy overshirt', 'Minimal low-profile sneakers'];
 }
 
-export function parseStylistResponse(raw: string, closet: GarmentItem[]): StylistResponse {
+export function parseStylistResponse(raw: string, closet: GarmentItem[], prompt = ''): StylistResponse {
   const json = raw.match(/\{[\s\S]*\}/)?.[0];
   if (!json) throw new Error('Stylist response did not contain JSON.');
   const value = JSON.parse(json) as Partial<StylistResponse>;
   const ownedCloset = closet.filter((item) => item.isOwned);
   const validIds = new Set(ownedCloset.map((item) => item.id));
-  const mode = value.mode === 'vibe_coach' ? 'vibe_coach' : 'outfit_builder';
+  const mode = /\baudit\b/i.test(prompt) || value.mode === 'vibe_coach' ? 'vibe_coach' : 'outfit_builder';
+  const fallbackAudit = mode === 'vibe_coach' && prompt ? offlineStylistResponse(`Audit: ${prompt}`, ownedCloset) : undefined;
   const wishlistSuggestions = Array.isArray(value.wishlistSuggestions)
     ? value.wishlistSuggestions.filter((item): item is string => typeof item === 'string').slice(0, 3)
     : [];
   while (mode === 'vibe_coach' && wishlistSuggestions.length < 3) {
-    wishlistSuggestions.push(defaultWishlist()[wishlistSuggestions.length]);
+    wishlistSuggestions.push((fallbackAudit?.wishlistSuggestions ?? defaultWishlist())[wishlistSuggestions.length]);
   }
 
   const modelAudit = new Map(
@@ -76,7 +77,7 @@ export function parseStylistResponse(raw: string, closet: GarmentItem[]): Stylis
         reasonNeeded: String(piece.reasonNeeded ?? 'Would help complete the requested look.'),
       };
     }) : [],
-    closetAudit: mode === 'vibe_coach' ? ownedCloset.map((item) => modelAudit.get(item.id) ?? {
+    closetAudit: mode === 'vibe_coach' ? ownedCloset.map((item) => modelAudit.get(item.id) ?? fallbackAudit?.closetAudit?.find((entry) => entry.itemId === item.id) ?? {
       itemId: item.id,
       whyItWorks: 'The stylist could not identify a clear match from the available metadata.',
       stylingTip: `Review the ${item.metadata.subcategory} fit and fabric beside the relaxed pieces in your closet.`,
@@ -97,10 +98,19 @@ function metadataText(item: GarmentItem): string {
 export function offlineStylistResponse(prompt: string, closet: GarmentItem[]): StylistResponse {
   const ownedCloset = closet.filter((item) => item.isOwned);
   const lowerPrompt = prompt.toLowerCase();
-  const isVibeCoach = /nonchalant|aesthetic|vibe|style more|dress more/i.test(prompt);
+  const isVibeCoach = /audit|nonchalant|aesthetic|vibe|style more|dress more/i.test(prompt);
   const hasRainConstraint = /rain|waterproof|wet|storm/i.test(prompt);
   const isConcert = /concert|music|show/i.test(prompt);
-  const byCategory = (category: Category) => ownedCloset.filter((item) => item.category === category);
+  const formal = /\b(formal|office|business|wedding|interview|smart)\b/i.test(prompt);
+  const casual = /\b(casual|relaxed|streetwear|grunge|concert|nonchalant\w*)\b/i.test(prompt);
+  const tokens = lowerPrompt.match(/[a-z]+/g)?.filter((word) => word.length > 2 && !['the', 'with', 'for', 'outfit', 'closet', 'build', 'want', 'more', 'dress', 'audit'].includes(word)) ?? [];
+  const score = (item: GarmentItem) => {
+    const text = metadataText(item);
+    const matches = tokens.filter((token) => text.includes(token)).length;
+    return matches * 10 + (formal ? item.metadata.formalityScore : casual ? 10 - item.metadata.formalityScore : 0);
+  };
+  const byCategory = (category: Category) => ownedCloset.filter((item) => item.category === category)
+    .sort((a, b) => score(b) - score(a));
   const top = byCategory('top')[0];
   const bottom = byCategory('bottom')[0];
   const layer = byCategory('outerwear')[0];
@@ -125,13 +135,13 @@ export function offlineStylistResponse(prompt: string, closet: GarmentItem[]): S
     missingPieces.push({ category: 'accessory', description: 'A silver chain or statement accessory', searchQuery: 'silver chain necklace', reasonNeeded: 'A jewelry accent can complete the concert look.' });
   }
 
-  const requestedAesthetic = lowerPrompt.match(/nonchalant|minimalist|streetwear|grunge|casual/)?.[0] ?? 'relaxed';
+  const requestedAesthetic = prompt.trim();
   return {
     mode: isVibeCoach ? 'vibe_coach' : 'outfit_builder',
-    outfitTitle: isVibeCoach ? `A ${requestedAesthetic} closet audit` : `Closet look for: ${prompt}`,
+    outfitTitle: isVibeCoach ? `Closet audit: ${requestedAesthetic}` : `Closet look for: ${prompt}`,
     stylistNotes: isVibeCoach
-      ? `Build a more ${requestedAesthetic} feel with relaxed proportions. Try cuffing a hem, leaving an overshirt open, and keeping the rest of the outfit simple.`
-      : `Pair ${top?.metadata.name ?? 'a top'} with ${bottom?.metadata.name ?? 'a relaxed bottom'}. Add an outer layer if the weather calls for it; the available metadata does not confirm waterproofing unless a piece is tagged for rain.`,
+      ? `For “${requestedAesthetic}”, compare the recorded style tags and formality of each piece below. This offline audit uses keyword matches, not a full model interpretation.`
+      : `For “${prompt}”, pair ${top?.metadata.name ?? 'a top'} with ${bottom?.metadata.name ?? 'a bottom'}. These are the closest metadata matches; offline matching may not cover every constraint. Waterproofing is only supported for pieces tagged for rain.`,
     selectedItemIds: isVibeCoach ? [] : selected.map((item) => item.id),
     accessoryAdvice: accessories.length
       ? `Your closet includes ${accessories.map((item) => item.metadata.name).join(', ')}. Use one or two accents; ${chain ? `${chain.metadata.name} can anchor the neckline.` : 'check how a chain, watch, ring, or bag balances the outfit.'}`
@@ -139,17 +149,21 @@ export function offlineStylistResponse(prompt: string, closet: GarmentItem[]): S
     missingPieces: isVibeCoach ? [] : missingPieces,
     closetAudit: isVibeCoach ? ownedCloset.map((item) => {
       const text = metadataText(item);
-      const matches = text.includes(requestedAesthetic) || /relaxed|oversized|loose|wide/.test(text);
+      const matches = tokens.some((token) => text.includes(token));
       return {
         itemId: item.id,
         whyItWorks: matches
-          ? `${item.metadata.name} has metadata that supports a ${requestedAesthetic} direction.`
-          : `The closet metadata does not show a clear ${requestedAesthetic} signal for ${item.metadata.name}.`,
-        stylingTip: item.category === 'bottom'
-          ? 'Try a casual cuff and pair it with a clean, simple top.'
-          : 'Try it with relaxed layers and keep the finishing details low-key.',
+          ? `${item.metadata.name} shares recorded style details with your request: “${requestedAesthetic}”. Formality: ${item.metadata.formalityScore}/10.`
+          : `${item.metadata.name} has no direct keyword match for “${requestedAesthetic}”. Recorded tags: ${item.metadata.vibeTags.join(', ')}; formality: ${item.metadata.formalityScore}/10.`,
+        stylingTip: formal
+          ? 'Pair with your highest-formality pieces and check the required dress code; a neat tuck can sharpen the proportions.'
+          : casual
+            ? 'Try relaxed proportions and a casual cuff, checking the result against your requested style.'
+            : `Compare this ${item.metadata.subcategory} with your goal before adding it; offline matching cannot infer styling details beyond its metadata.`,
       };
     }) : [],
-    wishlistSuggestions: isVibeCoach ? defaultWishlist() : [],
+    wishlistSuggestions: isVibeCoach ? (formal
+      ? ['Tailored trousers for your requested dress code', 'A structured blazer', 'Polished leather dress shoes']
+      : ['top', 'bottom', 'footwear'].map((category) => `${category} to explore for “${requestedAesthetic}” — verify fit and style before buying`)) : [],
   };
 }

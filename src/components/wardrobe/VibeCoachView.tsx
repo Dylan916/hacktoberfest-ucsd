@@ -8,9 +8,12 @@ interface VibeCoachViewProps {
   items: GarmentItem[];
   stylistResponse?: StylistResponse | null;
   onApplyPrompt?: (prompt: string) => void;
+  prompt: string;
+  onPromptChange: (prompt: string) => void;
+  isLoading?: boolean;
 }
 
-export function VibeCoachView({ items, stylistResponse, onApplyPrompt }: VibeCoachViewProps) {
+export function VibeCoachView({ items, stylistResponse, onApplyPrompt, prompt, onPromptChange, isLoading }: VibeCoachViewProps) {
   // Compute aesthetic vibe distribution
   const vibeAnalysis = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -170,13 +173,28 @@ export function VibeCoachView({ items, stylistResponse, onApplyPrompt }: VibeCoa
           </div>
         )}
         {onApplyPrompt && (
-          <button
-            onClick={() => onApplyPrompt('I want to dress more nonchalantly')}
-            className="inline-flex items-center space-x-1.5 text-xs text-zinc-900 hover:text-black dark:text-zinc-200 dark:hover:text-white pt-2 font-medium cursor-pointer"
-          >
-            <span>{stylistResponse?.mode === 'vibe_coach' ? 'Refresh closet audit' : 'Audit my closet'}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            if (prompt.trim() && !isLoading) onApplyPrompt(`Audit my closet for: ${prompt.trim()}`);
+          }}>
+            <label htmlFor="audit-prompt" className="block text-sm font-medium">What should your closet audit focus on?</label>
+            <input
+              id="audit-prompt"
+              value={prompt}
+              onChange={(event) => onPromptChange(event.target.value)}
+              placeholder="For example: a formal office wardrobe"
+              disabled={isLoading}
+              className="mt-2 w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent p-3 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={!prompt.trim() || isLoading}
+              className="inline-flex items-center space-x-1.5 text-xs text-zinc-900 hover:text-black dark:text-zinc-200 dark:hover:text-white pt-2 font-medium cursor-pointer"
+            >
+              <span>{isLoading ? 'Auditing…' : stylistResponse?.mode === 'vibe_coach' ? 'Refresh closet audit' : 'Audit my closet'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </form>
         )}
       </div>
     </div>

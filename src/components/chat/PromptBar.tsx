@@ -88,6 +88,7 @@ export function PromptBar({
           {quickScenarios.map((sc) => (
             <button
               key={sc.label}
+              disabled={isLoading}
               onClick={() => {
                 setPromptText(sc.prompt);
                 onPromptSubmit(sc.prompt, allowOnlineSearch);

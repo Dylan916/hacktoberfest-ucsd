@@ -59,3 +59,25 @@ test('offline Vibe Coach audits every owned garment and returns three staples', 
   assert.deepEqual(response.closetAudit?.map((item) => item.itemId), ['tee', 'trousers', 'rain-boots', 'silver-chain']);
   assert.equal(response.wishlistSuggestions?.length, 3);
 });
+
+test('offline selection follows requested garments and formality rather than closet order', () => {
+  const shirt = { ...closet[0], id: 'shirt', metadata: { ...closet[0].metadata, name: 'Formal silk shirt', subcategory: 'shirt', vibeTags: ['formal'], formalityScore: 9 } };
+  const choices = [...closet, shirt];
+  assert.ok(offlineStylistResponse('A formal dinner outfit', choices).selectedItemIds.includes('shirt'));
+  assert.ok(offlineStylistResponse('A casual cotton tee outfit', choices).selectedItemIds.includes('tee'));
+});
+
+test('custom audit requests are recognized and never replaced with relaxed styling', () => {
+  const response = offlineStylistResponse('Audit my closet for a formal office wardrobe', closet);
+  assert.equal(response.mode, 'vibe_coach');
+  assert.match(response.outfitTitle, /formal office/);
+  assert.ok(response.closetAudit?.every((entry) => !/relaxed layers|casual cuff/.test(entry.stylingTip)));
+  assert.notDeepEqual(response.wishlistSuggestions, offlineStylistResponse('Audit my closet for streetwear', closet).wishlistSuggestions);
+});
+
+test('an explicit custom audit stays an audit when the model omits mode or staples', () => {
+  const response = parseStylistResponse(JSON.stringify({outfitTitle:'Office', closetAudit:[]}), closet, 'Audit my closet for formal office attire');
+  assert.equal(response.mode, 'vibe_coach');
+  assert.equal(response.closetAudit?.length, 4);
+  assert.ok(response.wishlistSuggestions?.some((item) => /blazer/i.test(item)));
+});

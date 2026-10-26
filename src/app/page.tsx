@@ -33,6 +33,8 @@ export default function Home() {
   const [vibeCoachResponse, setVibeCoachResponse] = useState<StylistResponse | null>(null);
   const [wishlistSuggestions, setWishlistSuggestions] = useState<WishlistSuggestion[]>([]);
   const [lastPrompt, setLastPrompt] = useState('');
+  const [auditPrompt, setAuditPrompt] = useState('');
+  const stylistRequestPending = useRef(false);
   const [allowOnlineSearch, setAllowOnlineSearch] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isStylistLoading, setIsStylistLoading] = useState(false);
@@ -101,9 +103,12 @@ export default function Home() {
 
   // Handle prompt submission
   const handlePromptSubmit = async (prompt: string, allowOnline: boolean) => {
+    if (!prompt.trim() || stylistRequestPending.current) return;
+    stylistRequestPending.current = true;
     setIsStylistLoading(true);
     setStatusMessage('');
     setLastPrompt(prompt);
+    setAuditPrompt(prompt.replace(/^Audit my closet for:\s*/i, ''));
     try {
       const response = await askGemmaStylist(prompt, ownedItems, allowOnline);
       setActiveOutfit(response);
@@ -130,6 +135,7 @@ export default function Home() {
       console.error('Stylist request failed:', error);
       setStatusMessage('The stylist could not create a response. Please try again.');
     } finally {
+      stylistRequestPending.current = false;
       setIsStylistLoading(false);
     }
   };
@@ -310,6 +316,9 @@ export default function Home() {
               <VibeCoachView
                 items={ownedItems}
                 stylistResponse={vibeCoachResponse}
+                prompt={auditPrompt}
+                onPromptChange={setAuditPrompt}
+                isLoading={isStylistLoading}
                 onApplyPrompt={(prompt) => handlePromptSubmit(prompt, allowOnlineSearch)}
               />
             )}

@@ -22,7 +22,7 @@ async function askLocalGemma(prompt: string, closet: GarmentItem[]): Promise<Sty
   if (!response.ok) throw new Error(`Local Gemma returned ${response.status}.`);
   const result = await response.json() as { message?: { content?: string } };
   if (!result.message?.content) throw new Error("Local Gemma returned an empty response.");
-  return { ...parseStylistResponse(result.message.content, closet), provider: "local-gemma" };
+  return { ...parseStylistResponse(result.message.content, closet, prompt), provider: "local-gemma" };
 }
 
 /** Uses the hosted Gemma API when allowed and available; otherwise tries local Gemma, then a no-network fallback. */
@@ -31,12 +31,15 @@ export async function askGemmaStylist(
   closet: GarmentItem[],
   allowOnlineSearch: boolean,
 ): Promise<StylistResponse> {
-  if (allowOnlineSearch && typeof navigator !== "undefined" && navigator.onLine) {
+  // This toggle controls optional web context, not hosted model inference.
+  if (typeof navigator === "undefined" || navigator.onLine !== false) {
     try {
       const response = await fetch("/api/stylist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, closet, allowOnlineSearch }),
+        // Allow both sequential provider calls (research and styling) to finish.
+        signal: AbortSignal.timeout(130_000),
       });
       if (!response.ok) throw new Error(`Stylist service returned ${response.status}.`);
       return await response.json() as StylistResponse;

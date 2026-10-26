@@ -26,15 +26,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, httpOptions: { timeout: 60_000 } });
     let currentContext = "";
     if (body.allowOnlineSearch === true) {
-      const research = await ai.interactions.create({
-        model: "gemini-3.8-flash",
-        input: `Find only useful current context for styling this request (such as current weather if a location is specified or event dress guidance). Do not invent a location or forecast.\n\nRequest: ${body.prompt}`,
-        tools: [{ type: "google_search" }],
-      });
-      currentContext = research.output_text ?? "";
+      try {
+        const research = await ai.interactions.create({
+          model: "gemini-3.8-flash",
+          input: `Find only useful current context for styling this request (such as current weather if a location is specified or event dress guidance). Do not invent a location or forecast.\n\nRequest: ${body.prompt}`,
+          tools: [{ type: "google_search" }],
+        });
+        currentContext = research.output_text ?? "";
+      } catch {
+        // Optional context must not prevent styling the user's actual request.
+        console.warn("Stylist web context unavailable; continuing without research.");
+      }
     }
 
     const interaction = await ai.interactions.create({
@@ -42,7 +47,7 @@ export async function POST(request: Request) {
       system_instruction: STYLIST_SYSTEM_PROMPT,
       input: `${buildStylistInput(body.prompt, body.closet as GarmentItem[])}\n\nCurrent online context (if any): ${currentContext || "none"}`,
     });
-    const response = parseStylistResponse(interaction.output_text ?? "", body.closet as GarmentItem[]);
+    const response = parseStylistResponse(interaction.output_text ?? "", body.closet as GarmentItem[], body.prompt);
     return NextResponse.json({ ...response, provider: "gemma-api" });
   } catch (error) {
     console.error("Gemma stylist request failed", error);
